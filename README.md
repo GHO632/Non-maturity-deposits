@@ -1,104 +1,105 @@
-# Non-Maturity-Deposits: Prognose von Einlagenvolumen
+# Non-Maturity Deposits: Deposit Volume Forecasting
 
-Dieses Projekt untersucht, wie sich das Volumen deutscher **Non-Maturity Deposits (NMD)** – täglich fälliger, nicht vertraglich gebundener Einlagen – mit unterschiedlichen Machine-Learning-Verfahren prognostizieren lässt. Im Mittelpunkt stehen Out-of-Sample-Prognosen, der Vergleich ökonomischer Kovariaten und die Frage, wie stabil die Modellgüte über verschiedene Zeiträume und Zinsregime ist.
+This project studies how the volume of German **Non-Maturity Deposits (NMD)** can be forecast using different machine learning approaches. The focus is on out-of-sample forecasting, comparing model performance across economic covariates, and assessing forecast stability under different time windows and interest-rate regimes.
 
-> **Hinweis:** Die Ergebnisse sind modell- und datensatzabhängig und stellen weder eine Anlageempfehlung noch eine bankaufsichtliche oder regulatorische Bewertung dar.
+> Note: The results depend on the dataset, model configuration, and evaluation setup. This project is for research and analytical purposes and is not a recommendation to buy, sell, or manage financial assets.
 
-## Inhalt
+## Contents
 
-- [Projektziele](#projektziele)
-- [Methodik](#methodik)
-- [Repository-Aufbau](#repository-aufbau)
-- [Voraussetzungen und Installation](#voraussetzungen-und-installation)
-- [Schnellstart](#schnellstart)
-- [Benchmark-Optionen](#benchmark-optionen)
-- [Prognoseplot erstellen](#prognoseplot-erstellen)
-- [Daten](#daten)
-- [Ergebnisse und Interpretation](#ergebnisse-und-interpretation)
-- [Reproduzierbarkeit und bekannte Einschränkungen](#reproduzierbarkeit-und-bekannte-einschränkungen)
-- [Lizenz und Quellen](#lizenz-und-quellen)
+- [Project objective](#project-objective)
+- [Methodology](#methodology)
+- [Repository structure](#repository-structure)
+- [Requirements and installation](#requirements-and-installation)
+- [Quick start](#quick-start)
+- [Benchmark options](#benchmark-options)
+- [Generate a forecast plot](#generate-a-forecast-plot)
+- [Data](#data)
+- [Results and interpretation](#results-and-interpretation)
+- [Reproducibility and limitations](#reproducibility-and-limitations)
+- [License and sources](#license-and-sources)
 
-## Projektziele
+## Project objective
 
-Das Repository bietet eine Python-Pipeline, um:
+The repository implements a Python-based forecasting pipeline to:
 
-1. Einlagenvolumen aus historischen Daten über einen festen Prognosehorizont vorherzusagen.
-2. klassische und neuronale Modelle mit naiven Referenzprognosen zu vergleichen.
-3. den Einfluss verschiedener Kombinationen makroökonomischer und finanzieller Kovariaten zu untersuchen.
-4. Ergebnisse mit Einzel- und Rolling-Origin-Evaluation sowie Grafiken und CSV-Dateien auszuwerten.
+1. forecast deposit volume over a fixed horizon.
+2. compare classical and neural forecasting models against naive baselines.
+3. evaluate the impact of different macro-financial covariates.
+4. analyze single-point and rolling-origin results via tables, plots, and exported CSV files.
 
-## Methodik
+## Methodology
 
-### Modelle
+### Models
 
-| Modell | Kurzbeschreibung |
+| Model | Description |
 | --- | --- |
-| `naive_rw` | Random-Walk-Referenz: schreibt die letzte beobachtete Volumenänderung fort. |
-| `naive_hold` | Naive-Hold-Referenz: hält das zuletzt beobachtete Volumenniveau konstant. |
-| `linreg` | Lineares Sequenzmodell; beim Tuning wird Ridge-Regression verwendet. |
-| `ffn` | Feedforward Neural Network auf historischen Sequenzfenstern. |
-| `xgboost` | Gradient-Boosted Trees auf Sequenzmerkmalen. |
-| `tft` | Temporal Fusion Transformer für Zeitreihenprognosen. |
+| `naive_rw` | Random-walk baseline: extends the most recent observed change in volume. |
+| `naive_hold` | Naive-hold baseline: keeps the latest volume level constant. |
+| `linreg` | Linear sequence model using ridge regularization during tuning. |
+| `ffn` | Feedforward neural network trained on historical windows. |
+| `xgboost` | Gradient-boosted trees on sequence features. |
+| `tft` | Temporal Fusion Transformer for time-series forecasting. |
 
-### Kovariaten
+### Covariates
 
-Die gemeinsame Pipeline (`common.py`) verwendet standardmäßig folgende Variablen:
+The shared pipeline (`common.py`) uses the following variables by default:
 
-- `€STR` und `Einlagezinssatz`
-- `GPRC_DEU` (geopolitischer Risikoindex)
-- `MoM Inflation` (Inflation)
+- `€STR`
+- `Einlagezinssatz`
+- `GPRC_DEU`
+- `MoM Inflation`
 - `DAX`
-- `10Y Bond` (zehnjährige Anleihe)
+- `10Y Bond`
 
-Für Sequenzmodelle lassen sich zusätzlich verzögerte Kovariatenwerte für 1, 5 und 20 Handelstage aktivieren.
+For sequence models, lagged covariates can be activated for 1, 5, and 20 trading days.
 
-### Prognose und Evaluation
+### Forecasting and evaluation
 
-Die zentrale Pipeline modelliert die erste Differenz des Einlagenvolumens (`Diff_Volume`) und rekonstruiert daraus das Volumenniveau. Das Standard-Trainingsende ist in `common.py` auf den **30. November 2023**, der Standard-Prognosehorizont auf **100 Datenbeobachtungen** und das Sequenzgedächtnis auf **100 Beobachtungen** gesetzt.
+The main pipeline models the first difference of deposit volume (`Diff_Volume`) and reconstructs the volume level from the predicted differences. The default training end is **2023-11-30**, the default forecast horizon is **100 observations**, and the default sequence memory is **100 observations**.
 
-Bewertet werden MAE, RMSE und R² sowohl auf den Differenzen als auch auf dem Volumen. Die Rolling-Origin-Evaluation wiederholt den Test über mehrere Trainingsendpunkte. Optional können Ergebnisse nach Zinsregimen annotiert und Modellvergleiche mit einem Diebold-Mariano-Test ergänzt werden.
+Evaluation is based on MAE, RMSE, and R² for both differences and volume. A rolling-origin evaluation repeats the forecast over several training endpoints. Results can also be annotated by interest-rate regime, and model comparisons can include a Diebold-Mariano test.
 
-## Repository-Aufbau
+## Repository structure
 
 ```text
 .
-├── common.py                 # Gemeinsame Daten-, Modell- und Evaluationspipeline
-├── covariate_benchmark.py    # CLI für Modell-/Kovariaten-Benchmarks
-├── benchmark_viz.py          # Benchmark- und Rolling-Origin-Grafiken
-├── forecast_plot.py          # CLI zum Erstellen eines Modell-Prognoseplots
-├── treesearch_plot.py        # Gemeinsame Plot-Funktionen
-├── linreg.py                 # Linear-Regression-Plot-Einstiegspunkt
-├── ffn.py                    # FFN-Plot-Einstiegspunkt
-├── xgboost1.py               # XGBoost-Plot-Einstiegspunkt
-├── TFT.py                    # Separates TFT-Beispielskript
-├── Data all variables.xlsx   # Eingabedatensatz der gemeinsamen Pipeline
-├── Preprocessing/            # Datenaufbereitung und zugehörige Dateien
-└── Results/                  # Gespeicherte Resultate und Visualisierungen
+├── common.py                 # Shared data, model, and evaluation pipeline
+├── covariate_benchmark.py    # CLI for model/covariate benchmarking
+├── benchmark_viz.py          # Benchmark and rolling-origin visualizations
+├── forecast_plot.py          # CLI for forecast plotting
+├── treesearch_plot.py       # Shared plotting utilities
+├── linreg.py                # Linear regression entry point
+├── ffn.py                   # FFN entry point
+├── xgboost1.py              # XGBoost entry point
+├── TFT.py                   # Standalone TFT example script
+├── Data all variables.xlsx  # Main input dataset for the pipeline
+├── Preprocessing/           # Data preparation scripts and derived files
+├── Results/                 # Saved results and visualizations
 ```
 
-## Voraussetzungen und Installation
+## Requirements and installation
 
-Benötigt wird Python 3.10 oder neuer. Die Pipeline verwendet unter anderem pandas, NumPy, scikit-learn, PyTorch/Lightning, `pytorch-forecasting`, XGBoost und Matplotlib. Für Excel-Dateien wird `openpyxl` benötigt. Einige Vorverarbeitungsskripte brauchen zusätzliche Pakete wie SciPy oder yfinance.
+Python 3.10 or newer is recommended. The project uses libraries such as pandas, NumPy, scikit-learn, PyTorch/Lightning, `pytorch-forecasting`, XGBoost, and Matplotlib. Excel files require `openpyxl`. Some preprocessing scripts also depend on SciPy or yfinance.
 
-Erstelle eine virtuelle Umgebung und installiere die Pakete:
+Create and activate a virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-Aktivierung unter macOS/Linux:
+macOS/Linux:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Aktivierung unter Windows (PowerShell):
+Windows (PowerShell):
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-Installiere PyTorch passend zu deinem Betriebssystem und gegebenenfalls deiner CUDA-Version entsprechend der offiziellen PyTorch-Installationsanleitung. Danach können die Projektpakete installiert werden:
+Install the required dependencies:
 
 ```bash
 python -m pip install --upgrade pip
@@ -107,13 +108,13 @@ python -m pip install numpy pandas scikit-learn openpyxl xgboost \
   scipy joblib threadpoolctl yfinance
 ```
 
-Die exakte Kompatibilität der Paketversionen ist nicht durch eine im Repository enthaltene Lockdatei festgelegt. Für reproduzierbare Läufe sollten Python- und Paketversionen daher in der eigenen Umgebung dokumentiert bzw. fixiert werden.
+The exact package versions are not pinned in this repository. For reproducible runs, it is recommended to document or lock the environment versions used locally.
 
-## Schnellstart
+## Quick start
 
-Führe die Befehle aus dem Projektverzeichnis aus, damit die relativen Pfade zu den Excel-Dateien stimmen.
+Run commands from the project root so relative file paths resolve correctly.
 
-### Benchmark über vordefinierte Kovariaten-Sets
+### Benchmark across predefined covariate sets
 
 ```bash
 python covariate_benchmark.py \
@@ -123,9 +124,9 @@ python covariate_benchmark.py \
   --viz all
 ```
 
-Der Benchmark schreibt Ergebnisse in eine CSV und erstellt mit `--viz all` Visualisierungen. Die Ausgabeordner müssen existieren, bevor ein Ausgabepfad in einem noch nicht vorhandenen Unterordner verwendet wird.
+This benchmark writes results to CSV and generates visualizations when `--viz all` is enabled.
 
-### Rolling-Origin-Auswertung
+### Rolling-origin evaluation
 
 ```bash
 python covariate_benchmark.py \
@@ -136,41 +137,41 @@ python covariate_benchmark.py \
   --rolling-output Results/covariate_benchmark_rolling.csv
 ```
 
-Rolling-Origin-Benchmarks können je nach Anzahl der Modelle, Kovariaten-Sets und Origins erheblich länger dauern. TFT ist insbesondere rechenintensiv und muss explizit mit `--modelle tft` ausgewählt werden.
+Rolling-origin evaluations can take substantially longer, especially with larger model sets and more covariate combinations.
 
-### Hilfe zur Kommandozeile
+### CLI help
 
 ```bash
 python covariate_benchmark.py --help
 python forecast_plot.py --help
 ```
 
-## Benchmark-Optionen
+## Benchmark options
 
-`covariate_benchmark.py` unterstützt unter anderem:
+`covariate_benchmark.py` supports several command-line options, including:
 
-| Option | Bedeutung |
+| Option | Meaning |
 | --- | --- |
-| `--modelle ...` | Modelle aus `naive_rw`, `naive_hold`, `linreg`, `ffn`, `xgboost`, `tft` auswählen. |
-| `--kovariaten-modus presets` | Vordefinierte Kovariaten-Sets verwenden. |
-| `--kovariaten-modus singletons` | Jede Kovariate einzeln testen. |
-| `--kovariaten-modus pairs` | Alle Kovariaten-Paare testen. |
-| `--kovariaten-modus all` | Presets, Einzelvariablen und Paare testen. |
-| `--kovariaten-modus full` | Alle nichtleeren Teilmengen der sechs Kovariaten testen; umfangreich. |
-| `--rolling` | Rolling-Origin-Auswertung aktivieren. |
-| `--rolling-freq MS` | Häufigkeit automatisch erzeugter Origins festlegen, z. B. `MS` (monatlich) oder `QS` (quartalsweise). |
-| `--rolling-origins DATUM ...` | Explizite Trainingsendpunkte verwenden. |
-| `--lags` | Verzögerte Kovariaten für Sequenzmodelle ergänzen. |
-| `--tune` | GridSearchCV-Tuning für Sequenzmodelle einschalten. |
-| `--regime` | Bei Rolling-Auswertungen Origins nach der standardmäßigen €STR-Regimeeinteilung annotieren. |
-| `--dm-test` | Bei Rolling-Auswertungen einen paarweisen Diebold-Mariano-Testbericht ergänzen. |
-| `--viz all` | Heatmap, Boxplot, Scatterplot und Top-5-Tabelle erzeugen. |
+| `--modelle ...` | Select models from `naive_rw`, `naive_hold`, `linreg`, `ffn`, `xgboost`, `tft`. |
+| `--kovariaten-modus presets` | Use predefined covariate sets. |
+| `--kovariaten-modus singletons` | Evaluate each covariate individually. |
+| `--kovariaten-modus pairs` | Evaluate all pairwise covariate combinations. |
+| `--kovariaten-modus all` | Combine presets, singletons, and pairs. |
+| `--kovariaten-modus full` | Evaluate all non-empty subsets of the covariates; computationally heavy. |
+| `--rolling` | Run a rolling-origin evaluation. |
+| `--rolling-freq MS` | Set the frequency for automatic origins, e.g. `MS` or `QS`. |
+| `--rolling-origins DATUM ...` | Provide explicit training endpoints. |
+| `--lags` | Add lagged covariates for sequence models. |
+| `--tune` | Enable grid-search tuning for sequence models. |
+| `--regime` | Attach a regime label to each rolling origin based on the target variable, defaulting to `€STR`. |
+| `--dm-test` | Run a pairwise Diebold-Mariano test in rolling evaluation. |
+| `--viz all` | Generate heatmap, boxplot, scatter plot, and Top-5 table. |
 
-Die Modi `all` und besonders `full`, Kombinationen mit `--rolling` sowie Hyperparameter-Tuning multiplizieren die Anzahl der Läufe. Starte zum Prüfen der Umgebung zunächst mit wenigen Modellen und einem kleineren Kovariaten-Modus.
+Modes such as `all` and especially `full`, when combined with rolling evaluation and tuning, can multiply the number of model runs substantially. It is good practice to start with a small subset before running a full sweep.
 
-## Prognoseplot erstellen
+## Generate a forecast plot
 
-Beispiel für einen XGBoost-Forecast mit dem vordefinierten Set `nur_makro`:
+Example for an XGBoost forecast using the preset `nur_makro`:
 
 ```bash
 python forecast_plot.py \
@@ -180,57 +181,57 @@ python forecast_plot.py \
   --output Results/forecast_xgboost_nur_makro.png
 ```
 
-Weitere Beispiele:
+Additional examples:
 
 ```bash
-# Lineare Regression mit allen Standard-Kovariaten
+# Linear regression with all standard covariates
 python forecast_plot.py --modell linreg --label alle
 
-# XGBoost mit Tuning und verzögerten Kovariaten
+# XGBoost with lagged features and tuning enabled
 python forecast_plot.py --modell xgboost --label nur_zinsen --lags --tune
 
-# TFT mit explizitem Trainingsende
+# TFT with an explicit training end
 python forecast_plot.py --modell tft --label alle --training-end 2023-11-30
 ```
 
-Mit `--show` wird der Plot interaktiv angezeigt, anstatt ihn zu speichern. `--kovariaten` erlaubt statt eines vordefinierten Labels eine explizite Variablenliste.
+Use `--show` to display the plot instead of saving it. `--kovariaten` allows an explicit list of variables to override a preset label.
 
-## Daten
+## Data
 
-Die gemeinsame Pipeline erwartet standardmäßig `Data all variables.xlsx` im Projektverzeichnis. Die Datei muss mindestens die in `common.py` konfigurierten Spalten enthalten:
+The main pipeline expects `Data all variables.xlsx` in the project root. The file should contain the columns used by `common.py`, including:
 
 ```text
 Datum, Einlagevolumen, €STR, Einlagezinssatz, GPRC_DEU,
 MoM Inflation, DAX, 10Y Bond
 ```
 
-`Datum` muss als Datum interpretierbar sein; die Zeitreihe wird chronologisch sortiert. Die bereitgestellte Excel-Datei ist für die Ausführung der zentralen Pipeline vorgesehen. Skripte in `Preprocessing/` können weitere Rohdaten oder lokale Eingabedateien voraussetzen, die nicht notwendigerweise im Repository enthalten sind. Prüfe deshalb vor deren Ausführung die im jeweiligen Skript konfigurierten Eingabe- und Ausgabepfade.
+`Datum` must be interpretable as a date, and the time series is sorted chronologically before evaluation. The provided Excel file is intended for use with the main forecasting pipeline. Scripts in `Preprocessing/` may require additional raw files or source data that are not necessarily included in the repository. Check the path definitions in each script before running them.
 
-**Datenschutz und Nutzungsrechte:** Prüfe vor Veröffentlichung oder Weitergabe, ob die enthaltenen Daten öffentlich genutzt und weiterverteilt werden dürfen. Entferne vertrauliche oder nicht freigegebene Daten aus dem Repository.
+> Confidentiality and data rights: before publishing or sharing the project, ensure that any underlying data licenses and usage rights are respected.
 
-## Ergebnisse und Interpretation
+## Results and interpretation
 
-Der Ordner `Results/` enthält beispielhafte Forecast-Plots und Benchmark-Ausgaben, darunter Vergleiche der Modelle und Kovariaten. Beispielhafte Übersichten:
+The `Results/` folder contains example forecast charts and benchmark exports, including:
 
-- [Modellvergleich](Results/Comparison.jpeg)
-- [MAE nach Kovariate und Zeitraum](Results/MAE%20per%20covariate%20per%20time.jpeg)
-- [Performance und Stabilität](Results/Performance%20vs.%20Stability.jpeg)
-- [Beste Kovariaten-Sets je Modell](Results/best%20set%20per%20model.jpeg)
-- [Rolling-Origin-Zusammenfassung](Results/covariate_benchmark_rolling_summary.png)
+- [Model comparison](Results/Comparison.jpeg)
+- [MAE by covariate and time period](Results/MAE%20per%20covariate%20per%20time.jpeg)
+- [Performance vs. stability](Results/Performance%20vs.%20Stability.jpeg)
+- [Best covariate set by model](Results/best%20set%20per%20model.jpeg)
+- [Rolling-origin summary](Results/covariate_benchmark_rolling_summary.png)
 
-Ein einzelnes Testfenster ist keine ausreichende Grundlage für Aussagen zur allgemeinen Modellgüte. Bevorzuge Rolling-Origin-Ergebnisse und interpretiere Rangfolgen angesichts der getesteten Modell- und Kovariatenkombinationen als explorativ. Ein niedriger MAE in einem Zeitraum belegt nicht automatisch Robustheit in anderen Markt- oder Zinsphasen.
+A single test window is not sufficient to conclude broadly that one model is superior. Prefer rolling-origin evaluations and treat benchmark rankings as exploratory when working across many model and covariate combinations.
 
-## Reproduzierbarkeit und bekannte Einschränkungen
+## Reproducibility and limitations
 
-- Zentrale Einstellungen wie Zielvariable, Trainingsende, Horizont, Kovariaten und Zufalls-Seed stehen in `common.py`.
-- Das Verhalten hängt von den installierten Bibliotheksversionen sowie – bei PyTorch – von CPU/GPU und CUDA ab.
-- Tuning, TFT und umfangreiche Rolling-Origin- bzw. Kovariaten-Suchen können viel Rechenzeit und Arbeitsspeicher benötigen.
-- Der TFT verwendet im Prognosezeitraum fortgeschriebene letzte bekannte Werte für externe Kovariaten; Kalendermerkmale werden dagegen aus den zukünftigen Datumswerten berechnet. Das ist eine Modellierungsannahme und ersetzt keine tatsächlich bekannten Zukunftswerte.
-- `TFT.py` ist ein separates Beispielskript mit eigener Daten- und Spaltenkonfiguration. Es ist nicht identisch mit der zentralen Modellpipeline in `common.py`.
-- Vor einer wissenschaftlichen oder produktiven Nutzung sollten Datenaufbereitung, zeitliche Splits, Modellannahmen und Metriken fachlich geprüft werden.
+- Core settings such as target variable, training end, forecast horizon, covariates, and random seed are defined in `common.py`.
+- Results depend on package versions and hardware setup, especially for PyTorch and GPU usage.
+- Tuning, TFT training, and full rolling benchmarks can be computationally expensive.
+- The TFT pipeline uses the last known value of external covariates in the forecast window and computes calendar features from future dates. This is an analytical assumption and does not represent true future economic information.
+- `TFT.py` is a standalone example script with its own data configuration and is not identical to the main shared pipeline in `common.py`.
+- Before scientific or production use, the data preparation, time splits, modeling choices, and metric definitions should be reviewed in context.
 
-## Lizenz und Quellen
+## License and sources
 
-Im Repository ist derzeit keine Lizenzdatei ausgewiesen. Damit sind Nutzungs- und Weiterverwendungsrechte am Code nicht automatisch geklärt. Ergänze eine passende `LICENSE`-Datei, wenn das Projekt öffentlich genutzt oder weiterverwendet werden soll.
+No explicit license file is currently present in the repository. If the project is to be used publicly or redistributed, add a suitable `LICENSE` file and confirm the rights for code and data reuse.
 
-Für verwendete externe Datensätze, Indizes und Softwarebibliotheken sollten die jeweiligen Quellen, Versionen und Lizenzbedingungen dokumentiert werden. Insbesondere bei Finanz- und Makrodaten gelten gegebenenfalls separate Nutzungsbedingungen.
+External datasets, indexes, and software packages should be documented with their source, version, and licensing terms. For financial and macroeconomic data, specific usage conditions may also apply.
