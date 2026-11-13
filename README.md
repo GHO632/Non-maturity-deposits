@@ -2,7 +2,6 @@
 
 This project studies how the volume of German **Non-Maturity Deposits (NMD)** can be forecast using different machine learning approaches. The focus is on out-of-sample forecasting, comparing model performance across economic covariates, and assessing forecast stability under different time windows and interest-rate regimes.
 
-> Note: The results depend on the dataset, model configuration, and evaluation setup. This project is for research and analytical purposes and is not a recommendation to buy, sell, or manage financial assets.
 
 ## Contents
 
